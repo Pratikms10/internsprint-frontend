@@ -1,0 +1,289 @@
+import { useState, useEffect } from 'react';
+import { Search, MapPin, Code, Filter, Zap, Briefcase, Clock, ArrowRight, Building2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
+import Navbar from '../../components/Navbar';
+import { searchInternships, applyToInternship, getStudentProfile, getAIMatches, getSkillGap } from '../../api/internships';
+
+const domains = ['All', 'Web Development', 'Machine Learning', 'UI/UX Design', 'Data Science', 'Digital Marketing', 'Mobile Development'];
+
+export default function BrowseInternships() {
+  const [internships, setInternships] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState({ keyword: '', domain: '', location: '' });
+  const [activeDomain, setActiveDomain] = useState('All');
+  const [applying, setApplying] = useState(null);
+  const [selectedInternship, setSelectedInternship] = useState(null);
+  const [coverLetter, setCoverLetter] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [aiMode, setAiMode] = useState(false);
+  const [checkingFit, setCheckingFit] = useState(null);
+
+  const fetchInternships = async (params = {}) => {
+    setLoading(true);
+    setAiMode(false);
+    try {
+      const res = await searchInternships(params);
+      setInternships(res.data.data || []);
+    } catch (err) {
+      toast.error('Failed to load internships');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchInternships(); }, []);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const params = {};
+    if (search.keyword) params.keyword = search.keyword;
+    if (search.location) params.location = search.location;
+    if (activeDomain !== 'All') params.domain = activeDomain;
+    fetchInternships(params);
+  };
+
+  const handleDomainFilter = (domain) => {
+    setActiveDomain(domain);
+    const params = {};
+    if (search.keyword) params.keyword = search.keyword;
+    if (domain !== 'All') params.domain = domain;
+    fetchInternships(params);
+  };
+
+  const handleAIMatch = async () => {
+    try {
+      setLoading(true);
+      const profile = await getStudentProfile();
+      const skills = profile.data.data?.skills;
+      if (!skills) {
+        toast.error('Add skills to your profile first!');
+        setLoading(false);
+        return;
+      }
+      const res = await getAIMatches(skills);
+      const matches = res.data.matches || [];
+      const mapped = matches.map(m => ({
+        id: m.id,
+        title: m.title,
+        domain: m.domain,
+        location: m.location,
+        skillsRequired: m.skills_required,
+        stipend: m.stipend,
+        duration: m.duration,
+        deadline: m.deadline,
+        companyName: m.company_name,
+        companyVerified: !!m.is_verified,
+        matchPercent: m.matchPercent,
+      }));
+      setInternships(mapped);
+      setAiMode(true);
+      toast.success(`AI found ${mapped.length} matches for your skills!`);
+    } catch (err) {
+      toast.error('AI service unavailable. Make sure the AI module is running on port 5000.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCheckFit = async (internship) => {
+    setCheckingFit(internship.id);
+    try {
+      const profile = await getStudentProfile();
+      const studentSkills = profile.data.data?.skills || '';
+      if (!studentSkills) { toast.error('Add skills to your profile first!'); return; }
+      const res = await getSkillGap(studentSkills, internship.skillsRequired || '');
+      const gap = res.data;
+      toast(
+        `Fit: ${gap.gapScore}% | Missing: ${gap.missingSkills.length > 0 ? gap.missingSkills.join(', ') : 'None!'}`,
+        { icon: gap.gapScore >= 70 ? '✅' : gap.gapScore >= 40 ? '⚠️' : '❌', duration: 5000 }
+      );
+    } catch (err) {
+      toast.error('AI service unavailable');
+    } finally {
+      setCheckingFit(null);
+    }
+  };
+
+  const openApplyModal = (internship) => {
+    setSelectedInternship(internship);
+    setCoverLetter('');
+    setShowModal(true);
+  };
+
+  const handleApply = async () => {
+    if (!selectedInternship) return;
+    setApplying(selectedInternship.id);
+    try {
+      await applyToInternship(selectedInternship.id, { coverLetter });
+      toast.success(`Applied to ${selectedInternship.title}!`);
+      setShowModal(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Application failed');
+    } finally {
+      setApplying(null);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <Navbar />
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 py-8 px-4">
+        <div className="max-w-5xl mx-auto">
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-6">
+            Find Your Perfect <span className="gradient-text">Internship</span>
+          </h1>
+          <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-3">
+            <div className="flex-1 relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input value={search.keyword} onChange={e => setSearch({ ...search, keyword: e.target.value })} placeholder="Search by skill, title, or domain..." className="input pl-12" />
+            </div>
+            <div className="relative md:w-48">
+              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input value={search.location} onChange={e => setSearch({ ...search, location: e.target.value })} placeholder="Location" className="input pl-12" />
+            </div>
+            <button type="submit" className="btn-primary flex items-center gap-2 px-6">
+              <Filter className="w-4 h-4" /> Search
+            </button>
+            <button type="button" onClick={handleAIMatch} className="btn-outline flex items-center gap-2 px-6">
+              <Zap className="w-4 h-4" /> AI Match
+            </button>
+          </form>
+
+          {aiMode && (
+            <div className="mt-3 flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 font-medium">
+              <Zap className="w-4 h-4" /> Showing AI-ranked matches — sorted by skill compatibility
+              <button onClick={() => fetchInternships()} className="ml-2 text-xs underline">Clear</button>
+            </div>
+          )}
+
+          <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
+            {domains.map(domain => (
+              <button key={domain} onClick={() => handleDomainFilter(domain)}
+                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${activeDomain === domain ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
+                {domain}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-6">
+          {loading ? 'Searching...' : `${internships.length} internship${internships.length !== 1 ? 's' : ''} found`}
+        </p>
+
+        {loading ? (
+          <div className="grid md:grid-cols-2 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="card animate-pulse">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-3" />
+                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/2 mb-4" />
+                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-full mb-2" />
+                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-2/3" />
+              </div>
+            ))}
+          </div>
+        ) : internships.length === 0 ? (
+          <div className="text-center py-20">
+            <Briefcase className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">No internships found</h3>
+            <p className="text-gray-500 dark:text-gray-400 mb-6">Try different keywords or clear your filters</p>
+            <button onClick={() => { setActiveDomain('All'); setSearch({ keyword: '', domain: '', location: '' }); fetchInternships(); }} className="btn-primary">Clear Filters</button>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-4">
+            {internships.map((internship, i) => (
+              <motion.div key={internship.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                className="card hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+
+                {aiMode && internship.matchPercent !== undefined && (
+                  <div className={`mb-3 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg w-fit ${internship.matchPercent >= 70 ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400' : internship.matchPercent >= 30 ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>
+                    <Zap className="w-3 h-3" />
+                    {internship.matchPercent > 0 ? `${internship.matchPercent}% match` : 'Low match'}
+                  </div>
+                )}
+
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-xl flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                      {internship.companyName?.charAt(0)}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900 dark:text-white">{internship.title}</h3>
+                      <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-sm">
+                        <Building2 className="w-3 h-3" />
+                        {internship.companyName}
+                        {internship.companyVerified && <span className="badge-green badge ml-1 text-xs">✓ Verified</span>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {internship.domain && <span className="badge-blue badge">{internship.domain}</span>}
+                  {internship.location && <span className="badge bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center gap-1"><MapPin className="w-3 h-3" />{internship.location}</span>}
+                  {internship.duration && <span className="badge bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center gap-1"><Clock className="w-3 h-3" />{internship.duration}</span>}
+                </div>
+
+                {internship.skillsRequired && (
+                  <div className="mb-4">
+                    <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mb-2"><Code className="w-3 h-3" /> Skills required</div>
+                    <div className="flex flex-wrap gap-1">
+                      {internship.skillsRequired.split(',').slice(0, 4).map(skill => (
+                        <span key={skill} className="text-xs px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg font-medium">{skill.trim()}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
+                  <div>
+                    {internship.stipend && <span className="text-sm font-semibold text-green-600 dark:text-green-400">{internship.stipend}</span>}
+                    {internship.deadline && <p className="text-xs text-gray-400 mt-0.5">Deadline: {new Date(internship.deadline).toLocaleDateString('en-IN')}</p>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => handleCheckFit(internship)} disabled={checkingFit === internship.id}
+                      className="text-xs text-blue-500 dark:text-blue-400 hover:underline font-medium">
+                      {checkingFit === internship.id
+                        ? <span className="flex items-center gap-1"><div className="w-3 h-3 border border-blue-500 border-t-transparent rounded-full animate-spin" />Checking...</span>
+                        : 'Check fit'}
+                    </button>
+                    <button onClick={() => openApplyModal(internship)} className="btn-primary text-sm py-2 px-4 flex items-center gap-1">
+                      Apply <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {showModal && selectedInternship && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">{selectedInternship.companyName?.charAt(0)}</div>
+              <div>
+                <h3 className="font-bold text-gray-900 dark:text-white">{selectedInternship.title}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{selectedInternship.companyName}</p>
+              </div>
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Cover Letter <span className="text-gray-400 font-normal">(optional)</span></label>
+              <textarea value={coverLetter} onChange={e => setCoverLetter(e.target.value)} placeholder="Tell the company why you're a great fit..." rows={5} className="input resize-none" />
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setShowModal(false)} className="btn-secondary flex-1">Cancel</button>
+              <button onClick={handleApply} disabled={applying === selectedInternship.id} className="btn-primary flex-1 flex items-center justify-center gap-2">
+                {applying === selectedInternship.id ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Submit Application'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </div>
+  );
+}

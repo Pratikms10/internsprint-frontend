@@ -1,0 +1,58 @@
+import axios from 'axios';
+import api from './axios';
+
+export const searchInternships = (params) =>
+  api.get('/api/internships/search', { params });
+
+export const getInternshipById = (id) =>
+  api.get(`/api/internships/${id}`);
+
+// Student
+export const applyToInternship = (internshipId, data) =>
+  api.post(`/api/student/apply/${internshipId}`, data);
+
+export const getMyApplications = () =>
+  api.get('/api/student/applications');
+
+export const getStudentProfile = () =>
+  api.get('/api/student/profile');
+
+export const updateStudentProfile = (data) =>
+  api.put('/api/student/profile', data);
+
+export const getNotifications = () =>
+  api.get('/api/student/notifications');
+
+export const markNotificationsRead = () =>
+  api.put('/api/student/notifications/read');
+
+// Company
+export const postInternship = (data) =>
+  api.post('/api/company/internships', data);
+
+export const getCompanyInternships = () =>
+  api.get('/api/company/internships');
+
+export const closeInternship = (id) =>
+  api.put(`/api/company/internships/${id}/close`);
+
+export const getInternshipApplications = (id) =>
+  api.get(`/api/company/internships/${id}/applications`);
+
+export const updateApplicationStatus = (id, status) =>
+  api.put(`/api/company/applications/${id}/status`, null, { params: { status } });
+
+// Admin
+export const getAllUsers = () => api.get('/api/admin/users');
+export const getAllCompanies = () => api.get('/api/admin/companies');
+export const getAllInternshipsAdmin = () => api.get('/api/admin/internships');
+export const verifyCompany = (id) => api.put(`/api/admin/companies/${id}/verify`);
+export const unverifyCompany = (id) => api.put(`/api/admin/companies/${id}/unverify`);
+export const deleteInternshipAdmin = (id) => api.delete(`/api/admin/internships/${id}`);
+export const deactivateUser = (id) => api.put(`/api/admin/users/${id}/deactivate`);
+// AI Module
+export const getAIMatches = (skills) =>
+  axios.post('http://localhost:5000/api/match', { skills });
+
+export const getSkillGap = (studentSkills, requiredSkills) =>
+  axios.post('http://localhost:5000/api/skillgap', { studentSkills, requiredSkills });
