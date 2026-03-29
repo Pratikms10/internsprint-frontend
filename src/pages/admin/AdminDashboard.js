@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Building2, Briefcase, CheckCircle, XCircle, Trash2, Shield } from 'lucide-react';
+import { Users, Building2, Briefcase, Trash2, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import Navbar from '../../components/Navbar';

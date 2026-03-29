@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, BookOpen, Code, Link, Save, Award } from 'lucide-react';
+import { User, Code, Link, Save, Award } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';

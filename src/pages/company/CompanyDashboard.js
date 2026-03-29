@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Briefcase, Users, Eye, XCircle, Plus, TrendingUp, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Briefcase,  Eye, XCircle, Plus, TrendingUp, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import Navbar from '../../components/Navbar';
@@ -29,7 +29,7 @@ export default function CompanyDashboard() {
     }
   };
 
-  const totalApplications = internships.reduce((sum, i) => sum + (i.applicationCount || 0), 0);
+
   const openCount = internships.filter(i => i.status === 'open').length;
   const closedCount = internships.filter(i => i.status === 'closed').length;
 

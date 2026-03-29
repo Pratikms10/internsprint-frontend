@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Briefcase, Clock, CheckCircle, XCircle, Bell, ArrowRight, Search, TrendingUp, Award, Zap } from 'lucide-react';
+import { Briefcase, Clock, CheckCircle, Bell, ArrowRight, Search, TrendingUp, Award, Zap } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
-import { getMyApplications, getNotifications, markNotificationsRead } from '../../api/internships';
+import { getMyApplications, getNotifications} from '../../api/internships';
 
 const statusConfig = {
   applied:              { label: 'Applied',            color: 'badge-yellow' },
