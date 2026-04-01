@@ -52,7 +52,7 @@ export const deleteInternshipAdmin = (id) => api.delete(`/api/admin/internships/
 export const deactivateUser = (id) => api.put(`/api/admin/users/${id}/deactivate`);
 // AI Module
 export const getAIMatches = (skills) =>
-  axios.post('http://localhost:5000/api/match', { skills });
+  axios.post('https://internsprint-ai.onrender.com/api/match', { skills });
 
 export const getSkillGap = (studentSkills, requiredSkills) =>
-  axios.post('http://localhost:5000/api/skillgap', { studentSkills, requiredSkills });
+  axios.post('https://internsprint-ai.onrender.com/api/skillgap', { studentSkills, requiredSkills });
