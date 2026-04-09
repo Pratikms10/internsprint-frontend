@@ -6,6 +6,8 @@ import { ThemeProvider } from './context/ThemeContext';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 import StudentDashboard from './pages/student/StudentDashboard';
 import BrowseInternships from './pages/student/BrowseInternships';
@@ -18,7 +20,6 @@ import ManageApplications from './pages/company/ManageApplications';
 
 import AdminDashboard from './pages/admin/AdminDashboard';
 
-// Protected route wrapper
 const ProtectedRoute = ({ children, role }) => {
   const { user, loading } = useAuth();
   if (loading) return (
@@ -38,6 +39,8 @@ const AppRoutes = () => {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={user ? <Navigate to={`/${user.role}`} /> : <LoginPage />} />
       <Route path="/register" element={user ? <Navigate to={`/${user.role}`} /> : <RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       {/* Student routes */}
       <Route path="/student" element={<ProtectedRoute role="student"><StudentDashboard /></ProtectedRoute>} />
