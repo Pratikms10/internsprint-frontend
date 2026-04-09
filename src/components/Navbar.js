@@ -21,6 +21,7 @@ export default function Navbar() {
       { to: '/student', label: 'Dashboard' },
       { to: '/student/browse', label: 'Browse' },
       { to: '/student/applications', label: 'Applications' },
+      { to: '/student/resume', label: 'Resume' }
       { to: '/student/profile', label: 'Profile' },
     ];
     if (user.role === 'company') return [
