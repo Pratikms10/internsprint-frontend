@@ -56,3 +56,11 @@ export const getAIMatches = (skills) =>
 
 export const getSkillGap = (studentSkills, requiredSkills) =>
   axios.post('https://internsprint-ai.onrender.com/api/skillgap', { studentSkills, requiredSkills });
+
+// Save/Unsave internship
+export const saveInternship = (id) => api.post(`/api/student/save/${id}`);
+export const unsaveInternship = (id) => api.delete(`/api/student/save/${id}`);
+export const getSavedInternships = () => api.get('/api/student/saved');
+
+// Withdraw application
+export const withdrawApplication = (id) => api.delete(`/api/student/applications/${id}/withdraw`);

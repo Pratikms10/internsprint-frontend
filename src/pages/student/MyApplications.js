@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Briefcase, Clock, CheckCircle, XCircle, Calendar, Building2 } from 'lucide-react';
+import { Briefcase, Clock, CheckCircle, XCircle, Calendar, Building2, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import Navbar from '../../components/Navbar';
-import { getMyApplications } from '../../api/internships';
+import { getMyApplications, withdrawApplication } from '../../api/internships';
 
 const statusConfig = {
   applied:             { label: 'Applied',             color: 'badge-yellow', icon: Clock },
@@ -19,6 +20,7 @@ export default function MyApplications() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [withdrawing, setWithdrawing] = useState(null);
 
   useEffect(() => {
     getMyApplications()
@@ -27,9 +29,21 @@ export default function MyApplications() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = filter === 'all'
-    ? applications
-    : applications.filter(a => a.status === filter);
+  const handleWithdraw = async (applicationId) => {
+    if (!window.confirm('Withdraw this application? This cannot be undone.')) return;
+    setWithdrawing(applicationId);
+    try {
+      await withdrawApplication(applicationId);
+      setApplications(prev => prev.filter(a => a.id !== applicationId));
+      toast.success('Application withdrawn');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to withdraw');
+    } finally {
+      setWithdrawing(null);
+    }
+  };
+
+  const filtered = filter === 'all' ? applications : applications.filter(a => a.status === filter);
 
   const counts = {
     all: applications.length,
@@ -51,14 +65,9 @@ export default function MyApplications() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Navbar />
       <div className="max-w-5xl mx-auto px-4 py-8">
-
         <div className="mb-8">
-          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-1">
-            My Applications
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Track every application in one place
-          </p>
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-1">My Applications</h1>
+          <p className="text-gray-500 dark:text-gray-400">Track every application in one place</p>
         </div>
 
         {/* Filter tabs */}
@@ -72,15 +81,8 @@ export default function MyApplications() {
             { key: 'accepted', label: 'Accepted' },
             { key: 'rejected', label: 'Rejected' },
           ].map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setFilter(key)}
-              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 flex items-center gap-1.5 ${
-                filter === key
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-blue-300'
-              }`}
-            >
+            <button key={key} onClick={() => setFilter(key)}
+              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 flex items-center gap-1.5 ${filter === key ? 'bg-blue-600 text-white shadow-md' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-blue-300'}`}>
               {label}
               <span className={`text-xs px-1.5 py-0.5 rounded-full ${filter === key ? 'bg-white/20 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>
                 {counts[key]}
@@ -105,18 +107,12 @@ export default function MyApplications() {
               const s = statusConfig[app.status] || { label: app.status, color: 'badge-blue', icon: Clock };
               const StatusIcon = s.icon;
               const currentStageIdx = stages.indexOf(app.status);
+              const canWithdraw = ['applied', 'under_review'].includes(app.status);
 
               return (
-                <motion.div
-                  key={app.id}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="card hover:shadow-md transition-shadow duration-200"
-                >
+                <motion.div key={app.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                  className="card hover:shadow-md transition-shadow duration-200">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-
-                    {/* Left: Company + Role */}
                     <div className="flex items-center gap-4">
                       <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-2xl flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
                         {app.companyName?.charAt(0)}
@@ -124,8 +120,7 @@ export default function MyApplications() {
                       <div>
                         <h3 className="font-bold text-gray-900 dark:text-white text-lg">{app.internshipTitle}</h3>
                         <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-sm">
-                          <Building2 className="w-3.5 h-3.5" />
-                          {app.companyName}
+                          <Building2 className="w-3.5 h-3.5" />{app.companyName}
                         </div>
                         <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                           Applied {new Date(app.appliedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -133,17 +128,24 @@ export default function MyApplications() {
                       </div>
                     </div>
 
-                    {/* Right: Status */}
                     <div className="flex flex-col items-start md:items-end gap-2">
                       <span className={`${s.color} badge flex items-center gap-1.5`}>
-                        <StatusIcon className="w-3.5 h-3.5" />
-                        {s.label}
+                        <StatusIcon className="w-3.5 h-3.5" />{s.label}
                       </span>
                       {app.interviewDate && (
                         <div className="flex items-center gap-1.5 text-sm text-blue-600 dark:text-blue-400 font-medium">
                           <Calendar className="w-4 h-4" />
-                          Interview: {new Date(app.interviewDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          Interview: {new Date(app.interviewDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                         </div>
+                      )}
+                      {canWithdraw && (
+                        <button onClick={() => handleWithdraw(app.id)} disabled={withdrawing === app.id}
+                          className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600 font-medium transition-colors">
+                          {withdrawing === app.id
+                            ? <div className="w-3 h-3 border border-red-500 border-t-transparent rounded-full animate-spin" />
+                            : <Trash2 className="w-3.5 h-3.5" />}
+                          Withdraw
+                        </button>
                       )}
                     </div>
                   </div>
@@ -157,27 +159,19 @@ export default function MyApplications() {
                           const isCurrent = idx === currentStageIdx;
                           return (
                             <div key={stage} className="flex items-center flex-1">
-                              <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                                isCompleted
-                                  ? isCurrent
-                                    ? 'bg-blue-600 text-white ring-4 ring-blue-100 dark:ring-blue-900/50'
-                                    : 'bg-blue-600 text-white'
-                                  : 'bg-gray-200 dark:bg-gray-700 text-gray-400'
-                              }`}>
+                              <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${isCompleted ? isCurrent ? 'bg-blue-600 text-white ring-4 ring-blue-100 dark:ring-blue-900/50' : 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-400'}`}>
                                 {isCompleted && !isCurrent ? '✓' : idx + 1}
                               </div>
                               {idx < stages.length - 1 && (
-                                <div className={`flex-1 h-1 mx-1 rounded-full transition-all ${
-                                  idx < currentStageIdx ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
-                                }`} />
+                                <div className={`flex-1 h-1 mx-1 rounded-full transition-all ${idx < currentStageIdx ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'}`} />
                               )}
                             </div>
                           );
                         })}
                       </div>
                       <div className="flex justify-between mt-1.5">
-                        {stages.map((stage) => (
-                          <span key={stage} className="text-xs text-gray-400 dark:text-gray-500 capitalize" style={{ fontSize: '10px' }}>
+                        {stages.map(stage => (
+                          <span key={stage} className="text-gray-400 dark:text-gray-500 capitalize" style={{ fontSize: '10px' }}>
                             {stage.replace('_', ' ')}
                           </span>
                         ))}
@@ -188,8 +182,7 @@ export default function MyApplications() {
                   {app.status === 'rejected' && (
                     <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                       <p className="text-sm text-red-500 dark:text-red-400 flex items-center gap-2">
-                        <XCircle className="w-4 h-4" />
-                        Application was not selected this time. Keep applying!
+                        <XCircle className="w-4 h-4" /> Application was not selected. Keep applying!
                       </p>
                     </div>
                   )}

@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Search, MapPin, Code, Filter, Zap, Briefcase, Clock, ArrowRight, Building2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Search, MapPin, Code, Filter, Zap, Briefcase, Clock, ArrowRight, Building2, Bookmark, BookmarkCheck, SlidersHorizontal, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import Navbar from '../../components/Navbar';
-import { searchInternships, applyToInternship, getStudentProfile, getAIMatches, getSkillGap } from '../../api/internships';
+import { searchInternships, applyToInternship, getStudentProfile, getAIMatches, getSkillGap, saveInternship, unsaveInternship, getSavedInternships } from '../../api/internships';
 
 const domains = ['All', 'Web Development', 'Machine Learning', 'UI/UX Design', 'Data Science', 'Digital Marketing', 'Mobile Development'];
 
 export default function BrowseInternships() {
   const [internships, setInternships] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState({ keyword: '', domain: '', location: '' });
+  const [search, setSearch] = useState({ keyword: '', location: '' });
   const [activeDomain, setActiveDomain] = useState('All');
   const [applying, setApplying] = useState(null);
   const [selectedInternship, setSelectedInternship] = useState(null);
@@ -18,13 +18,19 @@ export default function BrowseInternships() {
   const [showModal, setShowModal] = useState(false);
   const [aiMode, setAiMode] = useState(false);
   const [checkingFit, setCheckingFit] = useState(null);
+  const [savedIds, setSavedIds] = useState(new Set());
+  const [savingId, setSavingId] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({ stipendMin: '', remote: '', duration: '', sort: 'latest' });
 
   const fetchInternships = async (params = {}) => {
     setLoading(true);
     setAiMode(false);
     try {
       const res = await searchInternships(params);
-      setInternships(res.data.data || []);
+      let data = res.data.data || [];
+      data = applyClientFilters(data);
+      setInternships(data);
     } catch (err) {
       toast.error('Failed to load internships');
     } finally {
@@ -32,7 +38,21 @@ export default function BrowseInternships() {
     }
   };
 
-  useEffect(() => { fetchInternships(); }, []);
+  const applyClientFilters = (data) => {
+    let filtered = [...data];
+    if (filters.remote === 'remote') filtered = filtered.filter(i => i.location?.toLowerCase().includes('remote'));
+    if (filters.remote === 'onsite') filtered = filtered.filter(i => !i.location?.toLowerCase().includes('remote'));
+    if (filters.sort === 'latest') filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    return filtered;
+  };
+
+  useEffect(() => {
+    fetchInternships();
+    getSavedInternships().then(res => {
+      const ids = new Set((res.data.data || []).map(i => i.id));
+      setSavedIds(ids);
+    }).catch(() => {});
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -56,34 +76,19 @@ export default function BrowseInternships() {
       setLoading(true);
       const profile = await getStudentProfile();
       const skills = profile.data.data?.skills;
-      if (!skills) {
-        toast.error('Add skills to your profile first!');
-        setLoading(false);
-        return;
-      }
+      if (!skills) { toast.error('Add skills to your profile first!'); setLoading(false); return; }
       const res = await getAIMatches(skills);
-      const matches = res.data.matches || [];
-      const mapped = matches.map(m => ({
-        id: m.id,
-        title: m.title,
-        domain: m.domain,
-        location: m.location,
-        skillsRequired: m.skills_required,
-        stipend: m.stipend,
-        duration: m.duration,
-        deadline: m.deadline,
-        companyName: m.company_name,
-        companyVerified: !!m.is_verified,
-        matchPercent: m.matchPercent,
+      const mapped = (res.data.matches || []).map(m => ({
+        id: m.id, title: m.title, domain: m.domain, location: m.location,
+        skillsRequired: m.skills_required, stipend: m.stipend, duration: m.duration,
+        deadline: m.deadline, companyName: m.company_name,
+        companyVerified: !!m.is_verified, matchPercent: m.matchPercent,
       }));
       setInternships(mapped);
       setAiMode(true);
-      toast.success(`AI found ${mapped.length} matches for your skills!`);
-    } catch (err) {
-      toast.error('AI service unavailable. Make sure the AI module is running on port 5000.');
-    } finally {
-      setLoading(false);
-    }
+      toast.success(`AI found ${mapped.length} matches!`);
+    } catch { toast.error('AI service unavailable'); }
+    finally { setLoading(false); }
   };
 
   const handleCheckFit = async (internship) => {
@@ -98,18 +103,27 @@ export default function BrowseInternships() {
         `Fit: ${gap.gapScore}% | Missing: ${gap.missingSkills.length > 0 ? gap.missingSkills.join(', ') : 'None!'}`,
         { icon: gap.gapScore >= 70 ? '✅' : gap.gapScore >= 40 ? '⚠️' : '❌', duration: 5000 }
       );
-    } catch (err) {
-      toast.error('AI service unavailable');
-    } finally {
-      setCheckingFit(null);
-    }
+    } catch { toast.error('AI service unavailable'); }
+    finally { setCheckingFit(null); }
   };
 
-  const openApplyModal = (internship) => {
-    setSelectedInternship(internship);
-    setCoverLetter('');
-    setShowModal(true);
+  const handleSave = async (internship) => {
+    setSavingId(internship.id);
+    try {
+      if (savedIds.has(internship.id)) {
+        await unsaveInternship(internship.id);
+        setSavedIds(prev => { const n = new Set(prev); n.delete(internship.id); return n; });
+        toast.success('Removed from saved');
+      } else {
+        await saveInternship(internship.id);
+        setSavedIds(prev => new Set([...prev, internship.id]));
+        toast.success('Internship saved!');
+      }
+    } catch { toast.error('Failed to save'); }
+    finally { setSavingId(null); }
   };
+
+  const openApplyModal = (internship) => { setSelectedInternship(internship); setCoverLetter(''); setShowModal(true); };
 
   const handleApply = async () => {
     if (!selectedInternship) return;
@@ -120,14 +134,14 @@ export default function BrowseInternships() {
       setShowModal(false);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Application failed');
-    } finally {
-      setApplying(null);
-    }
+    } finally { setApplying(null); }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Navbar />
+
+      {/* Search header */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 py-8 px-4">
         <div className="max-w-5xl mx-auto">
           <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-6">
@@ -136,11 +150,13 @@ export default function BrowseInternships() {
           <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-3">
             <div className="flex-1 relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input value={search.keyword} onChange={e => setSearch({ ...search, keyword: e.target.value })} placeholder="Search by skill, title, or domain..." className="input pl-12" />
+              <input value={search.keyword} onChange={e => setSearch({ ...search, keyword: e.target.value })}
+                placeholder="Search by skill, title, or domain..." className="input pl-12" />
             </div>
             <div className="relative md:w-48">
               <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input value={search.location} onChange={e => setSearch({ ...search, location: e.target.value })} placeholder="Location" className="input pl-12" />
+              <input value={search.location} onChange={e => setSearch({ ...search, location: e.target.value })}
+                placeholder="Location" className="input pl-12" />
             </div>
             <button type="submit" className="btn-primary flex items-center gap-2 px-6">
               <Filter className="w-4 h-4" /> Search
@@ -148,11 +164,50 @@ export default function BrowseInternships() {
             <button type="button" onClick={handleAIMatch} className="btn-outline flex items-center gap-2 px-6">
               <Zap className="w-4 h-4" /> AI Match
             </button>
+            <button type="button" onClick={() => setShowFilters(!showFilters)}
+              className={`btn-outline flex items-center gap-2 px-4 ${showFilters ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300' : ''}`}>
+              <SlidersHorizontal className="w-4 h-4" />
+            </button>
           </form>
+
+          {/* Advanced filters */}
+          <AnimatePresence>
+            {showFilters && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Work Type</label>
+                    <select value={filters.remote} onChange={e => setFilters({ ...filters, remote: e.target.value })} className="input text-sm py-2">
+                      <option value="">All</option>
+                      <option value="remote">Remote</option>
+                      <option value="onsite">On-site</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Sort By</label>
+                    <select value={filters.sort} onChange={e => setFilters({ ...filters, sort: e.target.value })} className="input text-sm py-2">
+                      <option value="latest">Latest</option>
+                      <option value="relevant">Most Relevant</option>
+                    </select>
+                  </div>
+                  <div className="flex items-end">
+                    <button onClick={() => { setFilters({ stipendMin: '', remote: '', duration: '', sort: 'latest' }); fetchInternships(); }}
+                      className="btn-secondary text-sm py-2 w-full flex items-center gap-1 justify-center">
+                      <X className="w-3 h-3" /> Clear
+                    </button>
+                  </div>
+                  <div className="flex items-end">
+                    <button onClick={() => fetchInternships()} className="btn-primary text-sm py-2 w-full">Apply Filters</button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {aiMode && (
             <div className="mt-3 flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 font-medium">
-              <Zap className="w-4 h-4" /> Showing AI-ranked matches — sorted by skill compatibility
+              <Zap className="w-4 h-4" /> Showing AI-ranked matches
               <button onClick={() => fetchInternships()} className="ml-2 text-xs underline">Clear</button>
             </div>
           )}
@@ -168,10 +223,13 @@ export default function BrowseInternships() {
         </div>
       </div>
 
+      {/* Results */}
       <div className="max-w-5xl mx-auto px-4 py-8">
-        <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-6">
-          {loading ? 'Searching...' : `${internships.length} internship${internships.length !== 1 ? 's' : ''} found`}
-        </p>
+        <div className="flex items-center justify-between mb-6">
+          <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
+            {loading ? 'Searching...' : `${internships.length} internship${internships.length !== 1 ? 's' : ''} found`}
+          </p>
+        </div>
 
         {loading ? (
           <div className="grid md:grid-cols-2 gap-4">
@@ -180,7 +238,6 @@ export default function BrowseInternships() {
                 <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-3" />
                 <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/2 mb-4" />
                 <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-full mb-2" />
-                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-2/3" />
               </div>
             ))}
           </div>
@@ -189,7 +246,7 @@ export default function BrowseInternships() {
             <Briefcase className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">No internships found</h3>
             <p className="text-gray-500 dark:text-gray-400 mb-6">Try different keywords or clear your filters</p>
-            <button onClick={() => { setActiveDomain('All'); setSearch({ keyword: '', domain: '', location: '' }); fetchInternships(); }} className="btn-primary">Clear Filters</button>
+            <button onClick={() => { setActiveDomain('All'); setSearch({ keyword: '', location: '' }); fetchInternships(); }} className="btn-primary">Clear Filters</button>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 gap-4">
@@ -197,13 +254,15 @@ export default function BrowseInternships() {
               <motion.div key={internship.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                 className="card hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
 
+                {/* AI match badge */}
                 {aiMode && internship.matchPercent !== undefined && (
-                  <div className={`mb-3 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg w-fit ${internship.matchPercent >= 70 ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400' : internship.matchPercent >= 30 ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'}`}>
+                  <div className={`mb-3 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg w-fit ${internship.matchPercent >= 70 ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400' : internship.matchPercent >= 30 ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-500'}`}>
                     <Zap className="w-3 h-3" />
                     {internship.matchPercent > 0 ? `${internship.matchPercent}% match` : 'Low match'}
                   </div>
                 )}
 
+                {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-xl flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
@@ -212,20 +271,30 @@ export default function BrowseInternships() {
                     <div>
                       <h3 className="font-bold text-gray-900 dark:text-white">{internship.title}</h3>
                       <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-sm">
-                        <Building2 className="w-3 h-3" />
-                        {internship.companyName}
+                        <Building2 className="w-3 h-3" />{internship.companyName}
                         {internship.companyVerified && <span className="badge-green badge ml-1 text-xs">✓ Verified</span>}
                       </div>
                     </div>
                   </div>
+                  {/* Save button */}
+                  <button onClick={() => handleSave(internship)} disabled={savingId === internship.id}
+                    className={`p-2 rounded-xl transition-all ${savedIds.has(internship.id) ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'}`}>
+                    {savedIds.has(internship.id) ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
+                  </button>
                 </div>
 
+                {/* Tags */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   {internship.domain && <span className="badge-blue badge">{internship.domain}</span>}
-                  {internship.location && <span className="badge bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center gap-1"><MapPin className="w-3 h-3" />{internship.location}</span>}
+                  {internship.location && (
+                    <span className={`badge flex items-center gap-1 ${internship.location.toLowerCase().includes('remote') ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}`}>
+                      <MapPin className="w-3 h-3" />{internship.location}
+                    </span>
+                  )}
                   {internship.duration && <span className="badge bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center gap-1"><Clock className="w-3 h-3" />{internship.duration}</span>}
                 </div>
 
+                {/* Skills */}
                 {internship.skillsRequired && (
                   <div className="mb-4">
                     <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mb-2"><Code className="w-3 h-3" /> Skills required</div>
@@ -237,6 +306,7 @@ export default function BrowseInternships() {
                   </div>
                 )}
 
+                {/* Footer */}
                 <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
                   <div>
                     {internship.stipend && <span className="text-sm font-semibold text-green-600 dark:text-green-400">{internship.stipend}</span>}
@@ -245,9 +315,7 @@ export default function BrowseInternships() {
                   <div className="flex items-center gap-2">
                     <button onClick={() => handleCheckFit(internship)} disabled={checkingFit === internship.id}
                       className="text-xs text-blue-500 dark:text-blue-400 hover:underline font-medium">
-                      {checkingFit === internship.id
-                        ? <span className="flex items-center gap-1"><div className="w-3 h-3 border border-blue-500 border-t-transparent rounded-full animate-spin" />Checking...</span>
-                        : 'Check fit'}
+                      {checkingFit === internship.id ? <span className="flex items-center gap-1"><div className="w-3 h-3 border border-blue-500 border-t-transparent rounded-full animate-spin" />Checking...</span> : 'Check fit'}
                     </button>
                     <button onClick={() => openApplyModal(internship)} className="btn-primary text-sm py-2 px-4 flex items-center gap-1">
                       Apply <ArrowRight className="w-3 h-3" />
@@ -260,6 +328,7 @@ export default function BrowseInternships() {
         )}
       </div>
 
+      {/* Apply Modal */}
       {showModal && selectedInternship && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
