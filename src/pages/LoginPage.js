@@ -42,7 +42,6 @@ export default function LoginPage() {
           </div>
           InternSprint
         </Link>
-
         <div>
           <h2 className="text-4xl font-extrabold text-white mb-4">
             Welcome back to your career journey
@@ -51,11 +50,7 @@ export default function LoginPage() {
             Track your applications, discover new opportunities, and land your dream internship.
           </p>
           <div className="space-y-4">
-            {[
-              'AI-powered internship matching',
-              'Real-time application tracking',
-              '500+ verified companies',
-            ].map((item) => (
+            {['AI-powered internship matching', 'Real-time application tracking', '500+ verified companies'].map((item) => (
               <div key={item} className="flex items-center gap-3 text-white">
                 <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
                   <ArrowRight className="w-3 h-3" />
@@ -65,7 +60,6 @@ export default function LoginPage() {
             ))}
           </div>
         </div>
-
         <p className="text-blue-100 text-sm">© 2026 InternSprint</p>
       </div>
 
@@ -73,7 +67,6 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
 
-          {/* Mobile logo */}
           <Link to="/" className="lg:hidden flex items-center gap-2 font-bold text-xl mb-8">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <Zap className="w-5 h-5 text-white" />
@@ -82,9 +75,7 @@ export default function LoginPage() {
           </Link>
 
           <div className="mb-8">
-            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">
-              Sign in
-            </h1>
+            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">Sign in</h1>
             <p className="text-gray-500 dark:text-gray-400">
               Don't have an account?{' '}
               <Link to="/register" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">
@@ -98,59 +89,35 @@ export default function LoginPage() {
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 Email address
               </label>
-              <input
-                name="email"
-                type="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="you@example.com"
-                className="input"
-                required
-              />
+              <input name="email" type="email" value={form.email} onChange={handleChange}
+                placeholder="you@example.com" className="input" required />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Password
+                </label>
+                <Link to="/forgot-password" className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
-                <input
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={form.password}
-                  onChange={handleChange}
-                  placeholder="••••••••"
-                  className="input pr-12"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
+                <input name="password" type={showPassword ? 'text' : 'password'}
+                  value={form.password} onChange={handleChange}
+                  placeholder="••••••••" className="input pr-12" required />
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
 
-          <div className="flex items-center justify-between mb-2">
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Password
-            </label>
-            <Link to="/forgot-password" className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
-              Forgot password?
-            </Link>
-          </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full flex items-center justify-center gap-2 py-3"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>Sign In <ArrowRight className="w-4 h-4" /></>
-              )}
+            <button type="submit" disabled={loading}
+              className="btn-primary w-full flex items-center justify-center gap-2 py-3">
+              {loading
+                ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                : <>Sign In <ArrowRight className="w-4 h-4" /></>}
             </button>
           </form>
 
