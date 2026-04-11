@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Briefcase, Clock, CheckCircle, Bell, ArrowRight, Search, TrendingUp, Award, Zap } from 'lucide-react';
-import Navbar from '../../components/Navbar';
+import { Briefcase, Clock, CheckCircle, XCircle, Bell, ArrowRight, Search, TrendingUp, Award, Zap, Bookmark } from 'lucide-react';import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
 import { getMyApplications, getNotifications} from '../../api/internships';
 

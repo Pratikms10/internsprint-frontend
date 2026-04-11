@@ -21,12 +21,14 @@ export default function Navbar() {
       { to: '/student', label: 'Dashboard' },
       { to: '/student/browse', label: 'Browse' },
       { to: '/student/applications', label: 'Applications' },
-      { to: '/student/resume', label: 'Resume' }
+      { to: '/student/saved', label: 'Saved' },
+      { to: '/student/resume', label: 'Resume' },
       { to: '/student/profile', label: 'Profile' },
     ];
     if (user.role === 'company') return [
       { to: '/company', label: 'Dashboard' },
       { to: '/company/post', label: 'Post Internship' },
+      { to: '/company/candidates', label: 'Find Candidates' },
     ];
     if (user.role === 'admin') return [
       { to: '/admin', label: 'Admin Panel' },
