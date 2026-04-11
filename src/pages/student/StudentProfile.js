@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { User, Code, Link, Save, Award } from 'lucide-react';
+import { User, Code, Link, Save, Award, Upload, CheckCircle, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
 import { getStudentProfile, updateStudentProfile } from '../../api/internships';
+import api from '../../api/axios';
 
 const skillSuggestions = ['Java', 'Python', 'React', 'Node.js', 'MySQL', 'MongoDB', 'Spring Boot', 'Machine Learning', 'TensorFlow', 'Figma', 'Adobe XD', 'SEO', 'Git', 'Docker', 'AWS'];
 
@@ -11,10 +12,12 @@ export default function StudentProfile() {
   const { user } = useAuth();
   const [profile, setProfile] = useState({
     college: '', degree: '', year: '', cgpa: '',
-    skills: '', bio: '', linkedin: '', github: '', resumeUrl: '',
+    skills: '', bio: '', linkedin: '', github: '',
+    resumeUrl: '', projects: '', certifications: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [skillInput, setSkillInput] = useState('');
   const [skillList, setSkillList] = useState([]);
 
@@ -22,8 +25,8 @@ export default function StudentProfile() {
     getStudentProfile()
       .then(res => {
         const data = res.data.data;
-        setProfile(data);
-        setSkillList(data.skills ? data.skills.split(',').map(s => s.trim()).filter(Boolean) : []);
+        setProfile(data || {});
+        setSkillList(data?.skills ? data.skills.split(',').map(s => s.trim()).filter(Boolean) : []);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -31,15 +34,11 @@ export default function StudentProfile() {
 
   const addSkill = (skill) => {
     const s = skill.trim();
-    if (s && !skillList.includes(s)) {
-      setSkillList([...skillList, s]);
-    }
+    if (s && !skillList.includes(s)) setSkillList([...skillList, s]);
     setSkillInput('');
   };
 
-  const removeSkill = (skill) => {
-    setSkillList(skillList.filter(s => s !== skill));
-  };
+  const removeSkill = (skill) => setSkillList(skillList.filter(s => s !== skill));
 
   const handleSave = async () => {
     setSaving(true);
@@ -53,8 +52,34 @@ export default function StudentProfile() {
     }
   };
 
+  const handleResumeUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf') { toast.error('Please upload a PDF file'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('File must be under 5MB'); return; }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await api.post('/api/student/resume/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setProfile(prev => ({ ...prev, resumeUrl: res.data.data }));
+      toast.success('Resume uploaded successfully!');
+    } catch (err) {
+      toast.error('Upload failed. Try pasting the URL instead.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const completionScore = () => {
-    const fields = [profile.college, profile.degree, profile.bio, profile.resumeUrl, skillList.length > 0];
+    const fields = [
+      profile.college, profile.degree, profile.bio,
+      profile.resumeUrl, skillList.length > 0,
+      profile.projects, profile.certifications
+    ];
     return Math.round((fields.filter(Boolean).length / fields.length) * 100);
   };
 
@@ -108,10 +133,7 @@ export default function StudentProfile() {
                 </span>
               </div>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-3">
-                <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${score}%` }}
-                />
+                <div className="bg-blue-600 h-2 rounded-full transition-all duration-500" style={{ width: `${score}%` }} />
               </div>
               <div className="space-y-1.5">
                 {[
@@ -120,6 +142,8 @@ export default function StudentProfile() {
                   { label: 'Bio', done: !!profile.bio },
                   { label: 'Skills', done: skillList.length > 0 },
                   { label: 'Resume', done: !!profile.resumeUrl },
+                  { label: 'Projects', done: !!profile.projects },
+                  { label: 'Certifications', done: !!profile.certifications },
                 ].map(({ label, done }) => (
                   <div key={label} className="flex items-center gap-2 text-xs">
                     <div className={`w-4 h-4 rounded-full flex items-center justify-center ${done ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'}`}>
@@ -174,19 +198,12 @@ export default function StudentProfile() {
                 <Code className="w-5 h-5 text-blue-600" />
                 <h3 className="font-bold text-gray-900 dark:text-white">Skills</h3>
               </div>
-
               <div className="flex gap-2 mb-3">
-                <input
-                  value={skillInput}
-                  onChange={e => setSkillInput(e.target.value)}
+                <input value={skillInput} onChange={e => setSkillInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addSkill(skillInput))}
-                  placeholder="Type a skill and press Enter..."
-                  className="input flex-1"
-                />
+                  placeholder="Type a skill and press Enter..." className="input flex-1" />
                 <button onClick={() => addSkill(skillInput)} className="btn-primary px-4">Add</button>
               </div>
-
-              {/* Current skills */}
               {skillList.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-4">
                   {skillList.map(skill => (
@@ -197,8 +214,6 @@ export default function StudentProfile() {
                   ))}
                 </div>
               )}
-
-              {/* Suggestions */}
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Suggestions:</p>
                 <div className="flex flex-wrap gap-2">
@@ -211,7 +226,39 @@ export default function StudentProfile() {
               </div>
             </div>
 
-            {/* Links */}
+            {/* Projects */}
+            <div className="card">
+              <div className="flex items-center gap-2 mb-4">
+                <Code className="w-5 h-5 text-blue-600" />
+                <h3 className="font-bold text-gray-900 dark:text-white">Projects</h3>
+              </div>
+              <textarea
+                value={profile.projects || ''}
+                onChange={e => setProfile({ ...profile, projects: e.target.value })}
+                placeholder={`InternSprint | React, Spring Boot, MySQL | Full-stack internship platform with AI matching\nPortfolio Website | HTML, CSS, JS | Personal portfolio with dark mode`}
+                rows={4}
+                className="input resize-none"
+              />
+              <p className="text-xs text-gray-400 mt-2">One project per line — Name | Tech Stack | Description</p>
+            </div>
+
+            {/* Certifications */}
+            <div className="card">
+              <div className="flex items-center gap-2 mb-4">
+                <Award className="w-5 h-5 text-blue-600" />
+                <h3 className="font-bold text-gray-900 dark:text-white">Certifications</h3>
+              </div>
+              <textarea
+                value={profile.certifications || ''}
+                onChange={e => setProfile({ ...profile, certifications: e.target.value })}
+                placeholder={`AWS Cloud Practitioner - Amazon - 2025\nReact Developer Certification - Meta - 2024`}
+                rows={3}
+                className="input resize-none"
+              />
+              <p className="text-xs text-gray-400 mt-2">One per line — Name - Issuer - Year</p>
+            </div>
+
+            {/* Links & Resume */}
             <div className="card">
               <div className="flex items-center gap-2 mb-4">
                 <Link className="w-5 h-5 text-blue-600" />
@@ -226,9 +273,45 @@ export default function StudentProfile() {
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">GitHub URL</label>
                   <input value={profile.github || ''} onChange={e => setProfile({ ...profile, github: e.target.value })} placeholder="https://github.com/yourname" className="input" />
                 </div>
+
+                {/* Resume Upload */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Resume URL</label>
-                  <input value={profile.resumeUrl || ''} onChange={e => setProfile({ ...profile, resumeUrl: e.target.value })} placeholder="https://drive.google.com/..." className="input" />
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Resume (PDF)
+                  </label>
+
+                  {/* Upload button */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <label className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed cursor-pointer transition-all text-sm font-semibold ${uploading ? 'border-blue-300 text-blue-400' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-blue-400 hover:text-blue-600'}`}>
+                      {uploading
+                        ? <><div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /> Uploading...</>
+                        : <><Upload className="w-4 h-4" /> Upload PDF (max 5MB)</>}
+                      <input type="file" accept=".pdf" onChange={handleResumeUpload} className="hidden" disabled={uploading} />
+                    </label>
+                  </div>
+
+                  {/* Current resume */}
+                  {profile.resumeUrl && (
+                    <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl mb-3">
+                      <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                      <a href={profile.resumeUrl} target="_blank" rel="noopener noreferrer"
+                        className="text-sm text-green-600 dark:text-green-400 hover:underline font-medium flex items-center gap-1 flex-1 truncate">
+                        Resume uploaded — Click to view
+                        <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                      </a>
+                    </div>
+                  )}
+
+                  {/* Manual URL */}
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">Or paste a URL (Google Drive, Dropbox)</p>
+                    <input
+                      value={profile.resumeUrl || ''}
+                      onChange={e => setProfile({ ...profile, resumeUrl: e.target.value })}
+                      placeholder="https://drive.google.com/..."
+                      className="input"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
