@@ -23,10 +23,10 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import ATSResumePage from './pages/student/ATSResumePage';
 
 import FindCandidates from './pages/company/FindCandidates';
-import FindCandidates from './pages/company/FindCandidates';
 import ATSResumePage from './pages/student/ATSResumePage';
 
 import SavedInternships from './pages/student/SavedInternships';
+import ATSResumePage from './pages/student/ATSResumePage';
 
 const ProtectedRoute = ({ children, role }) => {
   const { user, loading } = useAuth();
@@ -55,16 +55,13 @@ const AppRoutes = () => {
       <Route path="/student/browse" element={<ProtectedRoute role="student"><BrowseInternships /></ProtectedRoute>} />
       <Route path="/student/profile" element={<ProtectedRoute role="student"><StudentProfile /></ProtectedRoute>} />
       <Route path="/student/applications" element={<ProtectedRoute role="student"><MyApplications /></ProtectedRoute>} />
-      <Route path="/student/resume" element={<ProtectedRoute role="student"><ATSResumePage /></ProtectedRoute>} />
-      <Route path="/student/resume" element={<ProtectedRoute role="student"><ATSResumePage /></ProtectedRoute>} />
       <Route path="/student/saved" element={<ProtectedRoute role="student"><SavedInternships /></ProtectedRoute>} />
-
+      <Route path="/student/resume" element={<ProtectedRoute role="student"><ATSResumePage /></ProtectedRoute>} />
 
       {/* Company routes */}
       <Route path="/company" element={<ProtectedRoute role="company"><CompanyDashboard /></ProtectedRoute>} />
       <Route path="/company/post" element={<ProtectedRoute role="company"><PostInternship /></ProtectedRoute>} />
       <Route path="/company/applications/:id" element={<ProtectedRoute role="company"><ManageApplications /></ProtectedRoute>} />
-      <Route path="/company/candidates" element={<ProtectedRoute role="company"><FindCandidates /></ProtectedRoute>} />
       <Route path="/company/candidates" element={<ProtectedRoute role="company"><FindCandidates /></ProtectedRoute>} />
 
       {/* Admin routes */}
