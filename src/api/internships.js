@@ -69,4 +69,3 @@ export const withdrawApplication = (id) => api.delete(`/api/student/applications
 export const findMatchingStudents = (requiredSkills) =>
   axios.post('https://internsprint-ai.onrender.com/api/match/students', { requiredSkills });
 
-export const findMatchingStudents = (skills) => api.post('/api/student/ai/match-students', { skills });
