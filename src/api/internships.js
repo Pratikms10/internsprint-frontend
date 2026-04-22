@@ -64,3 +64,9 @@ export const getSavedInternships = () => api.get('/api/student/saved');
 
 // Withdraw application
 export const withdrawApplication = (id) => api.delete(`/api/student/applications/${id}/withdraw`);
+
+// Company AI matching
+export const findMatchingStudents = (requiredSkills) =>
+  axios.post('https://internsprint-ai.onrender.com/api/match/students', { requiredSkills });
+
+export const findMatchingStudents = (skills) => api.post('/api/student/ai/match-students', { skills });
