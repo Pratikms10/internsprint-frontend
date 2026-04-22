@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Zap, Users, ArrowLeft, Search, GraduationCap, Github, Linkedin, Code, Star } from 'lucide-react';
+import { Zap, Users, ArrowLeft, Search, GraduationCap, Github, Code, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import Navbar from '../../components/Navbar';
-import { getCompanyInternships } from '../../api/internships';
-import { findMatchingStudents } from '../../api/internships';
+import { getCompanyInternships, findMatchingStudents } from '../../api/internships';
 import { useEffect } from 'react';
 
 export default function FindCandidates() {
@@ -87,7 +86,6 @@ export default function FindCandidates() {
             What role are you hiring for?
           </h2>
 
-          {/* Select from your internships */}
           {internships.length > 0 && (
             <div className="mb-5">
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
@@ -118,7 +116,6 @@ export default function FindCandidates() {
             <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
           </div>
 
-          {/* Custom skills input */}
           <div className="mb-5">
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
               Required Skills
@@ -174,8 +171,6 @@ export default function FindCandidates() {
                     className="card hover:shadow-md transition-shadow"
                   >
                     <div className="flex flex-col md:flex-row md:items-start gap-4">
-
-                      {/* Avatar + Name */}
                       <div className="flex items-center gap-4 flex-1">
                         <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-400 rounded-2xl flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
                           {student.name?.charAt(0) || 'S'}
@@ -200,7 +195,6 @@ export default function FindCandidates() {
                         </div>
                       </div>
 
-                      {/* Match score */}
                       <div className="flex-shrink-0 text-center">
                         <div className={`inline-flex flex-col items-center px-4 py-2 rounded-xl ${getMatchColor(student.matchPercent)}`}>
                           <span className="text-2xl font-extrabold">{student.matchPercent}%</span>
@@ -209,7 +203,6 @@ export default function FindCandidates() {
                       </div>
                     </div>
 
-                    {/* Skills */}
                     {student.skills && (
                       <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                         <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mb-2">
@@ -229,7 +222,6 @@ export default function FindCandidates() {
                       </div>
                     )}
 
-                    {/* Bio + Links */}
                     {(student.bio || student.linkedin || student.github) && (
                       <div className="mt-3 flex flex-col md:flex-row md:items-center gap-3">
                         {student.bio && (
@@ -240,7 +232,7 @@ export default function FindCandidates() {
                             <a href={student.linkedin.startsWith('http') ? student.linkedin : `https://${student.linkedin}`}
                               target="_blank" rel="noopener noreferrer"
                               className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline">
-                              <Linkedin className="w-4 h-4" /> LinkedIn
+                              <span className="font-bold text-xs">in</span> LinkedIn
                             </a>
                           )}
                           {student.github && (
