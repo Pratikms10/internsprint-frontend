@@ -13,20 +13,15 @@ import StudentDashboard from './pages/student/StudentDashboard';
 import BrowseInternships from './pages/student/BrowseInternships';
 import StudentProfile from './pages/student/StudentProfile';
 import MyApplications from './pages/student/MyApplications';
+import SavedInternships from './pages/student/SavedInternships';
+import ATSResumePage from './pages/student/ATSResumePage';
 
 import CompanyDashboard from './pages/company/CompanyDashboard';
 import PostInternship from './pages/company/PostInternship';
 import ManageApplications from './pages/company/ManageApplications';
+import FindCandidates from './pages/company/FindCandidates';
 
 import AdminDashboard from './pages/admin/AdminDashboard';
-
-import ATSResumePage from './pages/student/ATSResumePage';
-
-import FindCandidates from './pages/company/FindCandidates';
-import ATSResumePage from './pages/student/ATSResumePage';
-
-import SavedInternships from './pages/student/SavedInternships';
-import ATSResumePage from './pages/student/ATSResumePage';
 
 const ProtectedRoute = ({ children, role }) => {
   const { user, loading } = useAuth();
