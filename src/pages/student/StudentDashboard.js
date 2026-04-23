@@ -1,18 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Briefcase, Clock, CheckCircle,Bell, ArrowRight, Search, TrendingUp, Award, Zap} from 'lucide-react';import Navbar from '../../components/Navbar';
+import { Briefcase, Clock, CheckCircle, Bell, ArrowRight, Search, TrendingUp, Award, Zap, Bookmark } from 'lucide-react';
+import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
-import { getMyApplications, getNotifications} from '../../api/internships';
-import TrendingRoles from '../../components/TrendingRoles';
-
+import { getMyApplications, getNotifications } from '../../api/internships';
 
 const statusConfig = {
-  applied:              { label: 'Applied',            color: 'badge-yellow' },
-  under_review:         { label: 'Under Review',       color: 'badge-blue' },
-  shortlisted:          { label: 'Shortlisted',        color: 'badge-purple' },
-  interview_scheduled:  { label: 'Interview Scheduled',color: 'badge-blue' },
-  accepted:             { label: 'Accepted',           color: 'badge-green' },
-  rejected:             { label: 'Rejected',           color: 'badge-red' },
+  applied:              { label: 'Applied',             color: 'badge-yellow' },
+  under_review:         { label: 'Under Review',        color: 'badge-blue' },
+  shortlisted:          { label: 'Shortlisted',         color: 'badge-purple' },
+  interview_scheduled:  { label: 'Interview Scheduled', color: 'badge-blue' },
+  accepted:             { label: 'Accepted',            color: 'badge-green' },
+  rejected:             { label: 'Rejected',            color: 'badge-red' },
 };
 
 export default function StudentDashboard() {
@@ -40,10 +39,10 @@ export default function StudentDashboard() {
   }, []);
 
   const stats = [
-    { label: 'Total Applied',    value: applications.length,                                                              icon: Briefcase,    color: 'text-blue-600',   bg: 'bg-blue-50 dark:bg-blue-900/20' },
-    { label: 'Under Review',     value: applications.filter(a => a.status === 'under_review').length,                     icon: Clock,        color: 'text-yellow-600', bg: 'bg-yellow-50 dark:bg-yellow-900/20' },
-    { label: 'Interviews',       value: applications.filter(a => a.status === 'interview_scheduled').length,              icon: TrendingUp,   color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/20' },
-    { label: 'Accepted',         value: applications.filter(a => a.status === 'accepted').length,                         icon: CheckCircle,  color: 'text-green-600',  bg: 'bg-green-50 dark:bg-green-900/20' },
+    { label: 'Total Applied',  value: applications.length,                                                   icon: Briefcase,   color: 'text-blue-600',   bg: 'bg-blue-50 dark:bg-blue-900/20' },
+    { label: 'Under Review',   value: applications.filter(a => a.status === 'under_review').length,          icon: Clock,       color: 'text-yellow-600', bg: 'bg-yellow-50 dark:bg-yellow-900/20' },
+    { label: 'Interviews',     value: applications.filter(a => a.status === 'interview_scheduled').length,   icon: TrendingUp,  color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/20' },
+    { label: 'Accepted',       value: applications.filter(a => a.status === 'accepted').length,              icon: CheckCircle, color: 'text-green-600',  bg: 'bg-green-50 dark:bg-green-900/20' },
   ];
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
@@ -60,7 +59,6 @@ export default function StudentDashboard() {
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 py-8">
 
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">
@@ -77,7 +75,6 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {stats.map((stat) => (
             <div key={stat.label} className="card flex items-center gap-4">
@@ -94,7 +91,6 @@ export default function StudentDashboard() {
 
         <div className="grid lg:grid-cols-3 gap-6">
 
-          {/* Recent Applications */}
           <div className="lg:col-span-2">
             <div className="card">
               <div className="flex items-center justify-between mb-6">
@@ -109,9 +105,7 @@ export default function StudentDashboard() {
                   <Briefcase className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
                   <p className="text-gray-500 dark:text-gray-400 font-medium">No applications yet</p>
                   <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">Start applying to internships to track them here</p>
-                  <Link to="/student/browse" className="btn-primary text-sm">
-                    Browse Internships
-                  </Link>
+                  <Link to="/student/browse" className="btn-primary text-sm">Browse Internships</Link>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -137,10 +131,8 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          {/* Right column */}
           <div className="space-y-6">
 
-            {/* Notifications */}
             <div className="card">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -153,7 +145,6 @@ export default function StudentDashboard() {
                   )}
                 </h2>
               </div>
-
               {notifications.length === 0 ? (
                 <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">No notifications yet</p>
               ) : (
@@ -167,15 +158,14 @@ export default function StudentDashboard() {
               )}
             </div>
 
-            {/* Quick actions */}
             <div className="card">
               <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
               <div className="space-y-2">
                 {[
-                  { to: '/student/browse',       icon: Search,      label: 'Find Internships',    color: 'text-blue-600' },
-                  { to: '/student/applications', icon: Briefcase,   label: 'My Applications',     color: 'text-purple-600' },
-                  { to: '/student/saved',        icon: Bookmark,    label: 'Saved Internships',   color: 'text-yellow-600' },
-                  { to: '/student/profile',      icon: Award,       label: 'Update Profile',      color: 'text-green-600' },
+                  { to: '/student/browse',       icon: Search,    label: 'Find Internships',  color: 'text-blue-600' },
+                  { to: '/student/applications', icon: Briefcase, label: 'My Applications',   color: 'text-purple-600' },
+                  { to: '/student/saved',        icon: Bookmark,  label: 'Saved Internships', color: 'text-yellow-600' },
+                  { to: '/student/profile',      icon: Award,     label: 'Update Profile',    color: 'text-green-600' },
                 ].map((action) => (
                   <Link
                     key={action.to}
@@ -192,7 +182,6 @@ export default function StudentDashboard() {
               </div>
             </div>
 
-            {/* Profile completion */}
             <div className="card bg-gradient-to-br from-blue-600 to-cyan-500 border-0">
               <div className="flex items-center gap-3 mb-3">
                 <Zap className="w-6 h-6 text-white" />
@@ -206,8 +195,6 @@ export default function StudentDashboard() {
               </Link>
             </div>
 
-            <TrendingRoles userLocation={profile?.location || ''} />
-            
           </div>
         </div>
       </div>
