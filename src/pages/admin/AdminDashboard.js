@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Building2, Briefcase, CheckCircle, XCircle, Trash2, Shield, TrendingUp, BarChart3, PieChart } from 'lucide-react';
+import { Users, Building2, Briefcase, CheckCircle,Trash2, Shield, TrendingUp, BarChart3, PieChart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
@@ -7,7 +7,7 @@ import {
   PieChart as RechartsPie, Pie, Cell, Legend
 } from 'recharts';
 import Navbar from '../../components/Navbar';
-import { getAllUsers, getAllCompanies, getAllInternshipsAdmin, verifyCompany, unverifyCompany, deleteInternshipAdmin, deactivateUser, getMyApplications } from '../../api/internships';
+import { getAllUsers, getAllCompanies, getAllInternshipsAdmin, verifyCompany, unverifyCompany, deleteInternshipAdmin, deactivateUser} from '../../api/internships';
 
 const COLORS = ['#3b82f6', '#06b6d4', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444'];
 

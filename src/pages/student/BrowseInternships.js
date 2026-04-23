@@ -52,8 +52,8 @@ export default function BrowseInternships() {
       const ids = new Set((res.data.data || []).map(i => i.id));
       setSavedIds(ids);
     }).catch(() => {});
-  }, []);
-
+  }, []);                  // eslint-disable-next-line react-hooks/exhaustive-deps
+  
   const handleSearch = (e) => {
     e.preventDefault();
     const params = {};

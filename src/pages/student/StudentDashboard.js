@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Briefcase, Clock, CheckCircle, XCircle, Bell, ArrowRight, Search, TrendingUp, Award, Zap, Bookmark } from 'lucide-react';import Navbar from '../../components/Navbar';
+import { Briefcase, Clock, CheckCircle,Bell, ArrowRight, Search, TrendingUp, Award, Zap} from 'lucide-react';import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
 import { getMyApplications, getNotifications} from '../../api/internships';
+import TrendingRoles from '../../components/TrendingRoles';
+
 
 const statusConfig = {
   applied:              { label: 'Applied',            color: 'badge-yellow' },
@@ -172,6 +174,7 @@ export default function StudentDashboard() {
                 {[
                   { to: '/student/browse',       icon: Search,      label: 'Find Internships',    color: 'text-blue-600' },
                   { to: '/student/applications', icon: Briefcase,   label: 'My Applications',     color: 'text-purple-600' },
+                  { to: '/student/saved',        icon: Bookmark,    label: 'Saved Internships',   color: 'text-yellow-600' },
                   { to: '/student/profile',      icon: Award,       label: 'Update Profile',      color: 'text-green-600' },
                 ].map((action) => (
                   <Link
@@ -202,6 +205,9 @@ export default function StudentDashboard() {
                 Update Profile
               </Link>
             </div>
+
+            <TrendingRoles userLocation={profile?.location || ''} />
+            
           </div>
         </div>
       </div>
