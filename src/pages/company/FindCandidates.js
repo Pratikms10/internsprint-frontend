@@ -1,11 +1,11 @@
 import { useState } from 'react';
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Zap, Users, ArrowLeft, Search, GraduationCap, Github, Code, Star } from 'lucide-react';
+import { Zap, Users, ArrowLeft, Search, GraduationCap, Code, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import Navbar from '../../components/Navbar';
 import { getCompanyInternships, findMatchingStudents } from '../../api/internships';
-import { useEffect } from 'react';
 
 export default function FindCandidates() {
   const [internships, setInternships] = useState([]);
@@ -65,7 +65,6 @@ export default function FindCandidates() {
       <Navbar />
       <div className="max-w-5xl mx-auto px-4 py-8">
 
-        {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Link to="/company" className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
             <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
@@ -80,7 +79,6 @@ export default function FindCandidates() {
           </div>
         </div>
 
-        {/* Search Panel */}
         <div className="card mb-8">
           <h2 className="font-bold text-gray-900 dark:text-white mb-5 text-lg">
             What role are you hiring for?
@@ -136,7 +134,6 @@ export default function FindCandidates() {
           </button>
         </div>
 
-        {/* Results */}
         {searched && (
           <div>
             <div className="flex items-center justify-between mb-4">
@@ -232,14 +229,14 @@ export default function FindCandidates() {
                             <a href={student.linkedin.startsWith('http') ? student.linkedin : `https://${student.linkedin}`}
                               target="_blank" rel="noopener noreferrer"
                               className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline">
-                              <span className="font-bold text-xs">in</span> LinkedIn
+                              <span className="font-bold text-xs border border-current rounded px-1">in</span> LinkedIn
                             </a>
                           )}
                           {student.github && (
                             <a href={student.github.startsWith('http') ? student.github : `https://${student.github}`}
                               target="_blank" rel="noopener noreferrer"
                               className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 hover:underline">
-                              <Github className="w-4 h-4" /> GitHub
+                              <span className="font-bold text-xs">GH</span> GitHub
                             </a>
                           )}
                         </div>
